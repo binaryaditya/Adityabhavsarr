@@ -1,0 +1,103 @@
+
+from kivy.app import App
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.textinput import TextInput
+from kivy.uix.button import Button
+from kivy.uix.label import Label
+from kivy.uix.image import Image
+from kivy.uix.popup import Popup
+from kivy.core.window import Window
+from kivy.graphics import Color, RoundedRectangle
+    
+Window.size = (420, 720)
+
+def is_scam_link(link):
+    suspicious = ['win', 'verify', 'gift', 'bank', 'otp', 'urgent' , 'Free', 'confirm' 'scam' 'lottery' ]
+    return any(word in link.lower() for word in suspicious)
+
+class RoundedBox(BoxLayout):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        with self.canvas.before:
+            Color(1, 1, 1, 1)
+            self.bg = RoundedRectangle(radius=[20], pos=self.pos, size=self.size)
+        self.bind(pos=self.update_bg, size=self.update_bg)
+
+    def update_bg(self, *args):
+        self.bg.pos = self.pos
+        self.bg.size = self.size
+
+class FraudPreventingUI(BoxLayout):
+    def __init__(self, **kwargs):
+        super().__init__(orientation='vertical', padding=30, spacing=25, **kwargs)
+
+        self.logo = Image(source='shield_icon.png', size_hint=(1, 0.3))
+        self.add_widget(self.logo)
+
+        self.title = Label(text="[b] Fraud Preventing App[/b]", font_size=36, markup=True, color=(0.2, 0.2, 0.2, 1))
+        self.add_widget(self.title)
+
+        self.input_box = RoundedBox(orientation='vertical', padding=10, spacing=10, size_hint=(1, 0.2))
+        self.input = TextInput(
+            hint_text="Paste link here...",
+            multiline=False,
+            font_size=20,
+            background_color=(0.95, 0.95, 0.95, 1),
+            foreground_color=(0, 0, 0, 1),
+            padding=(10, 10),
+        )
+        self.input_box.add_widget(self.input)
+        self.add_widget(self.input_box)
+
+        self.check_button = Button(
+            text="Check This Link",
+            font_size=24,
+            background_color=(0.2, 0.6, 1, 1),
+            color=(1, 1, 1, 1),
+            size_hint=(1, 0.15),
+        )
+        self.check_button.bind(on_press=self.check_link)
+        self.add_widget(self.check_button)
+
+        self.result_label = Label(
+            text="",
+            font_size=22,
+            halign='center',
+            valign='middle',
+            text_size=(Window.width - 60, None),
+            color=(0.2, 0.2, 0.2, 1)
+        )
+        self.add_widget(self.result_label)
+
+    def check_link(self, instance):
+        link = self.input.text.strip()
+        if not link:
+            self.show_popup("Empty", "Please paste a link to check.")
+            return
+
+        if is_scam_link(link):
+            self.result_label.text = "Scam link detected!"
+            self.show_popup("Scam Detected", "This link looks suspicious.\nYour trusted contact will be notified.")
+            self.send_alert(link)
+        else:
+            self.result_label.text = " Safe link. No threat detected."
+            self.show_popup("Safe Link", "This link seems fine.")
+
+    def show_popup(self, title, message):
+        popup = Popup(
+            title=title,
+            content=Label(text=message, font_size=18),
+            size_hint=(0.8, 0.4),
+        )
+        popup.open()
+
+    def send_alert(self, link):
+        print(f"[ALERT] Scam link detected: {link}")
+        # Future integration: SMS/email alert to family
+
+class FraudPreventingApp(App):
+    def build(self):
+        return FraudPreventingUI()
+
+if __name__ == '__main__':
+    FraudPreventingApp().run()
